@@ -1,0 +1,15 @@
+---
+BasedOnStyle: llvm
+IndentWidth: 4
+AlwaysBreakTemplateDeclarations: true
+AllowShortFunctionsOnASingleLine: All
+KeepEmptyLinesAtTheStartOfBlocks: false
+BreakBeforeBraces: Custom
+NamespaceIndentation: All
+ColumnLimit: '0'
+BraceWrapping:
+  AfterEnum: false
+  AfterFunction: true
+  AfterControlStatement: true
+  AfterClass: true
+  AfterNamespace: true
