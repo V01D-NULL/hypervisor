@@ -389,7 +389,7 @@ class BuddyManager
             trace(TRACE_BUDDY, "Creating %ld large hole at region [0x%lx-0x%lx]", size, e->base, e->base + e->length);
             buddies = reinterpret_cast<BuddyAllocator *>(e->base);
             e->base = ALIGN_UP(e->base + size);
-            e->length -= ALIGN_DOWN(e->base - size);
+            e->length -= ALIGN_DOWN(size);
             return (size / sizeof(BuddyAllocator));
         }
 
