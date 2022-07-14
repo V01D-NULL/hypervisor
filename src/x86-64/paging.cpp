@@ -1,6 +1,13 @@
 #include "x86-64/paging.hpp"
 #include "buddy.hpp"
 #include "page.hpp"
+#include <limine.h>
+
+USED struct limine_kernel_address_request kernel_address {
+	.id = LIMINE_KERNEL_ADDRESS_REQUEST, .revision = 0, .response = nullptr
+};
+
+constexpr size_t GB = 0x40000000UL;
 
 namespace paging
 {
@@ -15,22 +22,23 @@ namespace paging
 
     static Pml *hypervisor_pagemap{nullptr};
 
-    void init()
+    void init(struct limine_memmap_response* _memmap)
     {
+		trace(TRACE_CPU, "kern_load_addr: %lp", kernel_address.response->virtual_base);
         hypervisor_pagemap = reinterpret_cast<Pml *>(buddy.alloc(4096));
-		for (size_t i = 0; i < 0x40000000UL*4; i += page_size)
-            map_fast(hypervisor_pagemap, i, i, 3);
 
-		for (size_t i = 0; i < 0x40000000UL * 4; i += page_size)
-            map_fast(hypervisor_pagemap, i + 0xffff800000000000, i, 3);
+		for (size_t i = 0x1000; i <= buddy.get_highest_address(); i += page_size)
+			map_fast(hypervisor_pagemap, i, i, 3);
 
-        for (size_t i = 0; i < 0x40000000UL * 2; i += page_size)
-            map_fast(hypervisor_pagemap, i + 0xffffffff80000000, i, 1);
+		for (size_t i = 0; i <= GB*4; i += page_size)
+			map_fast(hypervisor_pagemap, i + 0xffff800000000000, i, 3);
+		
+		size_t e = 0;
+        for (size_t i = kernel_address.response->physical_base; i < kernel_address.response->physical_base + 0x40000000UL; i += page_size, e += page_size)
+            map_fast(hypervisor_pagemap, e + kernel_address.response->virtual_base, i, 1);
 
-		trace(TRACE_CPU, "%p", hypervisor_pagemap);
 		wrcr3(reinterpret_cast<uint64_t>(hypervisor_pagemap));
-		for(;;)
-			;
+		trace(TRACE_CPU, "Hypervisor pml4: 0x%lx", hypervisor_pagemap);
     }
 
     void map(struct Pml *pml4, size_t vaddr, size_t paddr, int flags)
@@ -73,7 +81,6 @@ namespace paging
         }
 
         uint64_t addr = (uint64_t)buddy.alloc(4096);
-		// trace(TRACE_CPU, "%lx", addr);
         assert_truth(addr != 0 && "Failed to allocate memory for a pagetable!");
 
         entry->page_tables[level] = paging_create_entry(addr, flags);
@@ -98,115 +105,3 @@ namespace paging
         };
     }
 } // namespace paging
-
-#include <stddef.h>
-#include "x86-64/paging.hpp"
-#include "trace.hpp"
-#include "buddy.hpp"
-
-constexpr size_t GB = 0x40000000UL;
-
-VirtualMemoryManager::VirtualMemoryManager(bool initial_mapping, limine_memmap_response *mmap) {
-    if (initial_mapping)
-        this->configure_initial_kernel_mapping(mmap);
-}
-
-void VirtualMemoryManager::configure_initial_kernel_mapping(limine_memmap_response *mmap) {
-    auto pml4 = buddy.alloc(4096);
-    if (pml4 == nullptr) console.panic("Failed to allocate memory for the kernel pml4");
-    this->kernel_pml4 = static_cast<pte_t *>(pml4);
-	trace(TRACE_CPU, "kernel_pml4: %p", this->kernel_pml4);
-
-    // for (size_t n = 4096; n < GB * 4; n += 4096) {
-    //     this->map(n, n, 0x3, kernel_pml4);
-    // }
-    
-    // for (auto i = 0ul; i < mmap->entry_count; i++) {
-    //     auto entry = mmap->entries[i];
-	// 	if (entry->type != LIMINE_MEMMAP_RESERVED)
-	// 	{
-			// auto base = 0x7ff00000;
-			// auto top =  0x80000000;
-			// trace(TRACE_CPU, "reserved memory [%lx-%lx]", base, top);
-			// for (size_t n = base; n < top; n+=4096)
-			// {
-			// 	// trace(TRACE_CPU, "mapping 0x%lx :: 0x%lx", n, 0xffff800000000000 + n);
-			// 	this->map(n, 0xffff800000000000 + n, 3, kernel_pml4);
-			// }
-		// }
-    //     if (entry.type == STIVALE2_MMAP_USABLE) {
-    //         auto base = entry.base;
-    //         auto top = base + entry.length;
-    //         for (; base != top; base += 4096) {
-    //             this->map(base, base, 0x3, kernel_pml4);
-    //         }
-    //     }
-    // }
-
-    // for (size_t n = 0; n < 4 * GB; n += 4096) {
-    //     this->map(n, n + 0xffff800000000000, 0x3, kernel_pml4);
-    // }
-
-    // for (size_t base = 0; base < 2 * GB; base += 4096) {
-    //     this->map(base, base + 0xffffffff80000000, 0x3, kernel_pml4);
-    // }
-
-	for (size_t i = 0x1000; i <= 0x180000000; i += page_size)
-		this->map(i, i, 3, kernel_pml4);
-
-	for (size_t i = 0; i <= 0x180000000; i += page_size)
-		this->map(i, i + 0xffff800000000000, 3, kernel_pml4);
-
-	for (size_t i = 0; i <= 0xf000; i+= page_size)
-		this->map(i, i + 0xffffffff80000000, 1, kernel_pml4);
-
-	for (size_t i = 0xf000; i <= 0x85012000; i += page_size)
-		this->map(i, i + 0xffffffff80000000, 3, kernel_pml4);
-
-    asm volatile("mov %0, %%cr3\n" ::"r"(this->kernel_pml4) : "memory");
-	for(;;)
-		;
-	trace(TRACE_CPU, "vmm: Initialized");
-    // info_logger << "vmm: Initialized" << logger::endl;
-}
-
-walk_t VirtualMemoryManager::walk(virt_t virtual_addr, pte_t *pml_ptr, uint64_t access_flags) {
-    auto idx4 = this->get_index(virtual_addr, 4);
-    auto idx3 = this->get_index(virtual_addr, 3);
-    auto idx2 = this->get_index(virtual_addr, 2);
-    auto idx1 = this->get_index(virtual_addr, 1);
-
-    if (!(pml_ptr[idx4] & 1)) {
-        auto ptr = buddy.alloc(4096);
-        if (ptr == nullptr) console.panic("OOM");
-        this->kernel_pml4[idx4] = reinterpret_cast<pte_t>(ptr);
-        this->kernel_pml4[idx4] |= access_flags;
-    }
-    auto pml3 = (pte_t *)(this->kernel_pml4[idx4] & ~(511));
-
-    if (!(pml3[idx3] & 1)) {
-        auto ptr = buddy.alloc(4096);
-        if (ptr == nullptr) console.panic("OOM");
-        pml3[idx3] = reinterpret_cast<pte_t>(ptr);
-        pml3[idx3] |= access_flags;
-    }
-    auto pml2 = (pte_t *)(pml3[idx3] & ~(511));
-
-    if ((pml2[idx2] & 1) == 0) {
-        auto ptr = buddy.alloc(4096);
-        if (ptr == nullptr) console.panic("OOM");
-        pml2[idx2] = reinterpret_cast<pte_t>(ptr);
-        pml2[idx2] |= access_flags;
-    }
-    return {
-        .idx = idx1,
-        .pml1 = (pte_t *)(pml2[idx2] & ~(511))
-    };
-}
-
-void VirtualMemoryManager::map(phys_t physical_addr, virt_t virtual_addr, uint64_t access_flags, pte_t *pml_ptr) {
-    auto table_walk_result = walk(virtual_addr, pml_ptr, access_flags);
-    table_walk_result.pml1[table_walk_result.idx] = (physical_addr | access_flags);
-    asm volatile("invlpg %0" ::"m"(virtual_addr)
-                 : "memory");
-}

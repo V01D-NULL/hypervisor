@@ -36,11 +36,11 @@ class BuddyAllocator
         NONE
     };
 
-    Order max_order = 0;                                // Represents the largest allocation and is determined at runtime.
-    constexpr static Order min_order = 9;               // 4kib, this is the smallest allocation size and will never change.
-    constexpr static Order largest_allowed_order = 30;  // 1GiB is the largest allocation on instance of this class may serve.
-    constexpr static bool verbose{}, sanity_checks{};   // sanity_checks ensures we don't go out-of-bounds on the freelist.
-                                                        // Beware: These options will impact the performance of the allocator.
+    Order max_order = 0;                               // Represents the largest allocation and is determined at runtime.
+    constexpr static Order min_order = 9;              // 4kib, this is the smallest allocation size and will never change.
+    constexpr static Order largest_allowed_order = 30; // 1GiB is the largest allocation on instance of this class may serve.
+    constexpr static bool verbose{}, sanity_checks{};  // sanity_checks ensures we don't go out-of-bounds on the freelist.
+                                                       // Beware: These options will impact the performance of the allocator.
 
     void init(AddressType base, int target_order)
     {
@@ -234,6 +234,8 @@ class BuddyManager
   public:
     void init(struct limine_memmap_response *memmap_response)
     {
+        highest_address = memmap_response->entries[memmap_response->entry_count - 1]->base + memmap_response->entries[memmap_response->entry_count - 1]->length;
+
         sort(move(memmap_response));
         auto num_buddies = reserve_buddy_allocator_memory(move(memmap_response));
         memset(static_cast<void *>(buddies), 0, sizeof(BuddyAllocator) * num_buddies);
@@ -281,6 +283,10 @@ class BuddyManager
         trace(TRACE_BUDDY, "Managing a grand total of: %ld bytes", total);
     }
 
+    // Returns the highest address in the memory map.
+    // This does NOT mean it is usable memory!
+    uint64_t get_highest_address() const { return highest_address; }
+
     AddressType alloc(uint64_t size)
     {
         BuddyAllocator::Order order = log2(size);
@@ -314,18 +320,18 @@ class BuddyManager
     void free(AddressType ptr)
     {
         auto page = pagelist.phys_to_page(reinterpret_cast<uint64_t>(ptr));
-		
-		// Not a buddy page
+
+        // Not a buddy page
         if (!page->is_buddy_page(BuddyAllocator::min_order))
             return;
 
-		// Save some data before the page gets reset.
+        // Save some data before the page gets reset.
         int buddy_index = page->buddy_index;
-		int order = page->order;
+        int order = page->order;
 
         // Mark the pages in the pagelist as free and perform some checks
         auto npages = (1 << (page->order + 3)) / 4096;
-		auto base = reinterpret_cast<uint64_t>(ptr);
+        auto base = reinterpret_cast<uint64_t>(ptr);
 
         for (auto i = 0; i < npages; i++, base += 4096)
         {
@@ -418,6 +424,7 @@ class BuddyManager
     }
 
   private:
+    uint64_t highest_address;
     BuddyAllocator *buddies;
     Index top_idx{};
 };
