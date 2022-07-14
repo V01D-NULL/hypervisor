@@ -21,18 +21,17 @@ enum class RawPageFlags : int {
 struct RawPage {
     RawPageFlags flags;
     int order;
-	int buddy_index;
+    int buddy_index;
     atomic_uint refcount;
-    LIST_NODE(RawPage) node;
 
-	bool is_buddy_page(int min_order) const { return order >= min_order; }
-	void reset(bool reset_refcount = true)
-	{
-		flags = RawPageFlags::None;
-		order = 0;
-		if (likely(reset_refcount))
-			refcount = 0;
-	}
+    bool is_buddy_page(int min_order) const { return order >= min_order; }
+    void reset(bool reset_refcount = true)
+    {
+        flags = RawPageFlags::None;
+        order = 0;
+        if (likely(reset_refcount))
+            refcount = 0;
+    }
 } PACKED;
 
 class Pagelist

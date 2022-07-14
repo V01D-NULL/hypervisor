@@ -23,7 +23,7 @@ struct BuddyAllocationResult {
   public:
     BuddyAllocationResult() = default;
     BuddyAllocationResult(const AddressType &block, Order ord, int num_pages) : ptr(block), order(ord), npages(num_pages) {}
-    INLINE AddressType unpack() { return ptr; }
+    INLINE AddressType unpack() const { return ptr; }
 };
 
 class BuddyAllocator
@@ -38,7 +38,7 @@ class BuddyAllocator
 
     Order max_order = 0;                               // Represents the largest allocation and is determined at runtime.
     constexpr static Order min_order = 9;              // 4kib, this is the smallest allocation size and will never change.
-    constexpr static Order largest_allowed_order = 30; // 1GiB is the largest allocation on instance of this class may serve.
+    constexpr static Order largest_allowed_order = 30; // 1GiB is the largest allocation an instance of this class may serve.
     constexpr static bool verbose{}, sanity_checks{};  // sanity_checks ensures we don't go out-of-bounds on the freelist.
                                                        // Beware: These options will impact the performance of the allocator.
 

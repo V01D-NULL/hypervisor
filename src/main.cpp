@@ -22,9 +22,8 @@ extern "C" void _start(void)
     pagelist.init(move(memmap.response));
     console.init();
 
-	trace(TRACE_CPU, "Booting hypervisor: %s %s [%s]", __DATE__, __TIME__, COMPILER_STRING);
-	// trace(TRACE_CPU, "%ld", buddy.get_buddy_memory());
-	paging::init(memmap.response);
+    trace(TRACE_CPU, "Booting hypervisor: %s %s [%s]", __DATE__, __TIME__, COMPILER_STRING);
+    paging::init(memmap.response);
 
     halt();
     UNREACHABLE;
