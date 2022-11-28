@@ -22,7 +22,7 @@ struct RawPage {
     RawPageFlags flags;
     int order;
     int buddy_index;
-    int refcount;
+    atomic_uint refcount;
 
     bool is_buddy_page(int min_order) const { return order >= min_order; }
     void reset(bool reset_refcount = true)
@@ -40,27 +40,27 @@ class Pagelist
     using AddressType = uint64_t;
 
   public:
-    void init(struct limine_memmap_response *memmap_response)
+    void init(struct limine_memmap_response *memmap_response, size_t size)
     {
-        for (size_t i = 0; i < memmap_response->entry_count; i++)
-        // for (size_t i = 0; i < size; i += page_size)
+        // for (size_t i = 0; i < memmap_response->entry_count; i++)
+		for (size_t i = 0; i < size; i += page_size)
         {
-            struct limine_memmap_entry *e = memmap_response->entries[i];
+            // struct limine_memmap_entry *e = memmap_response->entries[i];
 
-            // Ensure the array size is not exceeded
-            auto const projected_index = largest_index + (e->length / 4096);
-            assert_truth(projected_index <= page_array_sz);
+            // // Ensure the array size is not exceeded
+            // auto const projected_index = largest_index + (e->length / 4096);
+            // assert_truth(projected_index <= page_array_sz);
 
-            for (size_t j = 0; j <= e->length; j += 4096, largest_index++)
-            {
+            // for (size_t j = 0; j <= e->length; j += 4096, largest_index++)
+            // {
                 // clang-format off
                 auto const page = RawPage
          		{
-                    .flags = (e->type != LIMINE_MEMMAP_USABLE) ? RawPageFlags::Unusable : RawPageFlags::None
+                    // .flags = (e->type != LIMINE_MEMMAP_USABLE) ? RawPageFlags::Unusable : RawPageFlags::None
                 };
-                pages[largest_index] = page;
+                pages[largest_index] = move(page);
                 // clang-format on
-            }
+            // }
         }
 
         trace(TRACE_CPU, "RawPage size: %ld bytes", sizeof(RawPage));
@@ -93,7 +93,7 @@ class Pagelist
         AddressType address;
     };
 
-    RawPage *pages = (struct RawPage *)((reinterpret_cast<uintptr_t>(GLOB_PAGE_ARRAY)));
+    RawPage *pages = (struct RawPage *)GLOB_PAGE_ARRAY;
     Index largest_index{}; // largest index into the 'pages' array
 };
 

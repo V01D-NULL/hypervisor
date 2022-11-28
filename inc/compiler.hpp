@@ -25,3 +25,11 @@
 #define ALIGN_DOWN(__number) ((__number) & ~(4096 - 1))
 
 #define BIT(o) (1 << o)
+
+#define MAKE_BITFIELD(...) \
+    union {                \
+        uint64_t All;      \
+        struct {           \
+            __VA_ARGS__;   \
+        } field;           \
+    }

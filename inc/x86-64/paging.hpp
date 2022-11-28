@@ -1,8 +1,8 @@
 #pragma once
 
 #include "compiler.hpp"
-#include <stdint.h>
 #include <limine.h>
+#include <stdint.h>
 
 namespace paging
 {
@@ -24,7 +24,7 @@ namespace paging
         struct pte page_tables[512];
     };
 
-	void init(struct limine_memmap_response* _memmap);
-	void map(struct Pml *pml4, size_t vaddr, size_t paddr, int flags);
-	void map_fast(struct Pml *pml4, size_t vaddr, size_t paddr, int flags);
+    void init();
+    void map(struct Pml *pml4, size_t vaddr, size_t paddr, int flags);
+    void map_fast(struct Pml *pml4, size_t vaddr, size_t paddr, int flags);
 } // namespace paging

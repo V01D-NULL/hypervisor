@@ -8,6 +8,10 @@ USED struct limine_framebuffer_request fb {
     .id = LIMINE_FRAMEBUFFER_REQUEST, .revision = 0, .response = nullptr
 };
 
+USED struct limine_terminal_request request_term {
+	.id = LIMINE_TERMINAL_REQUEST, .revision = 0, .response = nullptr
+};
+
 CREATE_SINGLETON(Console, console);
 
 void Console::init()
@@ -67,6 +71,8 @@ void Console::con_write(const char *str, size_t len)
 {
     if (initialized)
         term_print(&term, str);
+	else
+		request_term.response->write(request_term.response->terminals[0], str, len);
 
     e9_write(str, len);
 }
@@ -75,4 +81,11 @@ void Console::e9_write(const char *str, size_t len)
 {
     for (auto i = 0ul, n = len; i < n; i++)
         IO::out<char>(0xE9, str[i]);
+}
+
+void put_pixel(int x, int y, int color)
+{
+	auto *addr = (uint64_t*)fb.response->framebuffers[0]->address;
+	addr[x + y * fb.response->framebuffers[0]->width] = color;
+	// *((uint64_t*)(addr + x * y)) = color;
 }

@@ -50,7 +50,6 @@ class BuddyAllocator
         if constexpr (verbose)
             trace(TRACE_BUDDY, "min-order: %ld, max-order: %ld", min_order, max_order);
 
-		freelist.init();
         freelist.add(base, max_order - min_order);
     }
 
@@ -140,22 +139,14 @@ class BuddyAllocator
     class Freelist
     {
       private:
-        T list[orders + 1]{nullptr};
+        T list[orders + 1]{};
 
       public:
-		void init()
-		{
-			for (int i = 0; i < orders + 1; i++)
-				list[i] = nullptr;
-		}
-
         void add(const T &block, Order order)
         {
             if constexpr (sanity_checks)
                 if (order < min_order || order > largest_allowed_order)
                     assert_truth(!"Order mismatch");
-
-            memset((void *)block, 0, 4096);
 
             if (block)
                 *(T *)block = list[order];
@@ -245,15 +236,15 @@ class BuddyManager
     {
         highest_address = memmap_response->entries[memmap_response->entry_count - 1]->base + memmap_response->entries[memmap_response->entry_count - 1]->length;
 
-        // for (int i = 0; i < 100; i++)
-        //     put_pixel(i, 30, 0xffffff);
+		for (int i = 0; i < 100; i++)
+			put_pixel(i, 30, 0xffffff);
 
         sort(move(memmap_response));
         auto num_buddies = reserve_buddy_allocator_memory(move(memmap_response));
         memset(static_cast<void *>(buddies), 0, sizeof(BuddyAllocator) * num_buddies);
 
-        // for (int i = 0; i < 100; i++)
-        //     put_pixel(i, 40, 0xffffff);
+		for (int i = 0; i < 100; i++)
+			put_pixel(i, 40, 0xffffff);
 
         Index idx{};
         uint64_t total{};
@@ -296,8 +287,8 @@ class BuddyManager
         }
 
         trace(TRACE_BUDDY, "Managing a grand total of: %ld bytes", total);
-        // for (int i = 0; i < 100; i++)
-        //     put_pixel(i, 50, 0xFFFFFF);
+		for (int i = 0; i < 100; i++)
+			put_pixel(i, 50, 0xFFFFFF);
     }
 
     // Returns the highest address in the memory map.

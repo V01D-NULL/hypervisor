@@ -12,5 +12,5 @@ extern "C" int __cxa_atexit([[maybe_unused]] void (*func)(void *),
 }
 
 // Used by the limine terminal port
-USED void *alloc_mem(size_t size) { return buddy.alloc(size); }
+USED void *alloc_mem(size_t size) { return buddy.must_alloc(size); }
 USED void free_mem(void *ptr, size_t size) {}

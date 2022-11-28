@@ -9,6 +9,8 @@ void Gdt::init()
     set64(0, 0);
     set64(0x9A, 0x20);
     set64(0x92, 0x20);
+	set64(0xF2, 0x00);
+	set64(0xFA, 0x20);
 
     // clang-format off
 	Gdtr gdtr {

@@ -19,8 +19,13 @@ extern "C" void set64(uint64_t offset, uint16_t selector, char ist, char types_a
     };
 }
 
-extern "C" void interrupt_handler()
+extern "C" void interrupt_handler(iframe frame)
 {
-	trace(TRACE_INTERRUPT, "Interrupt!");
+	trace(TRACE_INTERRUPT, "CPU Exception: %d | err: %d", frame.isr_number, frame.error_code);
+	trace(TRACE_INTERRUPT, "RIP = %p", frame.rip);
+	
+	// for (int i = 0; i < 100; i++)
+	// 	put_pixel(i, 100, 0xFF0000);
+		
 	halt();
 }
