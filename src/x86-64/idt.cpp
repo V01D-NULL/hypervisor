@@ -15,12 +15,12 @@ extern "C" void set64(uint64_t offset, uint16_t selector, char ist, char types_a
         .types_attr = types_attr,
         .offset1 = (uint16_t)((offset >> 16)),
         .offset2 = (uint32_t)((offset >> 32)),
-        .reserved = 0
-    };
+        .reserved = 0};
 }
 
-extern "C" void interrupt_handler()
+extern "C" void interrupt_handler(Idt::IntFrame *frame)
 {
-	trace(TRACE_INTERRUPT, "Interrupt!");
-	halt();
+    trace(TRACE_INTERRUPT, "ISR=%#lx RIP=%#lx CS=%#lx RFLAGS=%#lx",
+          frame->isr_number, frame->rip, frame->cs, frame->rflags);
+    halt();
 }

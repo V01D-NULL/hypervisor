@@ -20,3 +20,11 @@ int log2(uint64_t value)
     value |= value >> 32;
     return tab64[((uint64_t)((value - (value >> 1)) * 0x07EDD5E59A4E28C2)) >> 58];
 }
+
+uint32_t random()
+{
+    // Simple LCG
+    static uint64_t seed = 88172645463325252ull;
+    seed = seed * 6364136223846793005ull + 1;
+    return (seed >> 32) & 0x7FFFFFFF;
+}

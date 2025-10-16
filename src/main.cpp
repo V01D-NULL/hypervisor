@@ -1,3 +1,4 @@
+#include "bootloader_module.hpp"
 #include "buddy.hpp"
 #include "compiler.hpp"
 #include "cpu.hpp"
@@ -7,6 +8,7 @@
 #include "x86-64/gdt.hpp"
 #include "x86-64/idt.hpp"
 #include "x86-64/paging.hpp"
+#include "x86-64/pic.hpp"
 #include <limine.h>
 
 USED struct limine_memmap_request memmap {
@@ -15,15 +17,17 @@ USED struct limine_memmap_request memmap {
 
 extern "C" void _start(void)
 {
+    pic.remap();
     gdt.init();
     idt.init();
 
-    buddy.init(move(memmap.response));
-    pagelist.init(move(memmap.response));
+    buddy.init(memmap.response);
+    pagelist.init(memmap.response);
     console.init();
 
-    trace(TRACE_CPU, "Booting hypervisor: %s %s [%s]", __DATE__, __TIME__, COMPILER_STRING);
-    paging::init(memmap.response);
+    trace(TRACE_CPU, "%s %s [%s]", __DATE__, __TIME__, COMPILER_STRING);
+    paging.init();
+    trace(TRACE_CPU, "Help me god");
 
     halt();
     UNREACHABLE;

@@ -21,21 +21,23 @@ $(ELF): $(OBJECT)
 	@clang $(C_FLAGS) -Wno-deprecated $< -o $@
 
 limine:
-	git clone https://github.com/limine-bootloader/limine.git --branch=v3.0-branch-binary --depth=1 || echo ""
+	git clone https://github.com/limine-bootloader/limine.git --branch=v7.x-binary --depth=1 || echo ""
 	$(MAKE) -C limine
 
 limine/iso:
 	rm -rf iso_root
-	mkdir -p iso_root
-	cp $(ELF) res/term_bg.bmp \
-		src/limine.cfg limine/limine.sys limine/limine-cd.bin limine/limine-cd-efi.bin iso_root/
+	mkdir -p iso_root/boot/limine
+	cp $(ELF) src/limine.cfg res/term_bg.bmp iso_root/boot
+	cp  src/limine.cfg limine/limine-bios.sys limine/limine-bios-cd.bin limine/limine-uefi-cd.bin iso_root/boot/limine
 
-	xorriso -as mkisofs -b limine-cd.bin \
+	xorriso -as mkisofs -b boot/limine/limine-bios-cd.bin \
 		-no-emul-boot -boot-load-size 4 -boot-info-table \
-		--efi-boot limine-cd-efi.bin \
+		--efi-boot boot/limine/limine-uefi-cd.bin \
 		-efi-boot-part --efi-boot-image --protective-msdos-label \
 		iso_root -o $(ISO)
-	limine/limine-deploy $(ISO)
+
+
+	limine/limine bios-install $(ISO)
 	rm -rf iso_root
 
 clean:

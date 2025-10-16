@@ -10,6 +10,7 @@ interrupt_stub:
     push rbx
     push rcx
     push rdx
+    push rbp
     push rdi
     push rsi
     push r8
@@ -21,6 +22,7 @@ interrupt_stub:
     push r14
     push r15
 
+    mov rdi, rsp
 	call interrupt_handler
 
     pop r15

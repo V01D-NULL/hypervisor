@@ -65,14 +65,22 @@ void Console::init()
 
 void Console::con_write(const char *str, size_t len)
 {
+    char buff[512];
+    const char *color = color_codes[random() % (sizeof(color_codes) / sizeof(color_codes[0]))];
+    sprintf(buff, "%s%s", color, str);
+
     if (initialized)
-        term_print(&term, str);
+        term_print(&term, buff);
 
     e9_write(str, len);
 }
 
 void Console::e9_write(const char *str, size_t len)
 {
+    const char *color = color_codes[random() % (sizeof(color_codes) / sizeof(color_codes[0]))];
+    for (auto i = 0; i < 5; i++)
+        IO::out<char>(0xE9, color[i]);
+
     for (auto i = 0ul, n = len; i < n; i++)
         IO::out<char>(0xE9, str[i]);
 }
