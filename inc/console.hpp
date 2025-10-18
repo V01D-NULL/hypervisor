@@ -1,10 +1,10 @@
 #pragma once
 
+#include "c_string.hpp"
 #include "cpu.hpp"
 #include "format.hpp"
 #include "io.hpp"
 #include "limine-terminal-port/source/term.h"
-#include "string.hpp"
 
 class Console
 {
@@ -19,8 +19,8 @@ class Console
         vsnprintf((char *)&buff, (size_t)-1, fmt, ap);
         va_end(ap);
 
-        *(buff + string::strlen(buff)) = '\n';
-        con_write(buff, string::strlen(buff));
+        *(buff + strlen(buff)) = '\n';
+        con_write(buff, strlen(buff));
     }
 
     void panic(const char *fmt, ...)
@@ -31,7 +31,7 @@ class Console
         vsnprintf((char *)&buff, (size_t)-1, fmt, ap);
         va_end(ap);
 
-        con_write(buff, string::strlen(buff));
+        con_write(buff, strlen(buff));
         halt();
     }
 

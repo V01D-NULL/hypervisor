@@ -1,7 +1,7 @@
 #include "acpi/acpi.hpp"
 #include "acpi/rsdt.hpp"
+#include "c_string.hpp"
 #include "compiler.hpp"
-#include "string.hpp"
 #include "trace.hpp"
 #include <limine.h>
 

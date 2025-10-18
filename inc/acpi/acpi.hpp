@@ -1,8 +1,8 @@
 #pragma once
 
+#include "c_string.hpp"
 #include "rsdp.hpp"
 #include "rsdt.hpp"
-#include "string.hpp"
 
 class Acpi
 {
@@ -19,7 +19,7 @@ class Acpi
         {
             auto sdt = reinterpret_cast<Sdt *>(has_xsdt ? xsdt->next[i] : rsdt->next[i]);
 
-            if (!string::strncmp(sdt->signature, name, 4) && sdt->validate_checksum())
+            if (!strncmp(sdt->signature, name, 4) && sdt->validate_checksum())
             {
                 return reinterpret_cast<T>(sdt);
             }
