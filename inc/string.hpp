@@ -1,3 +1,5 @@
+#pragma once
+
 #include "compiler.hpp"
 #include <stdarg.h>
 #include <stddef.h>

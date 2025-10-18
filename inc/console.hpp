@@ -8,10 +8,6 @@
 
 class Console
 {
-  private:
-    struct term_t term;
-    bool initialized{};
-
   public:
     void init();
 
@@ -40,7 +36,9 @@ class Console
     }
 
   private:
-    static constexpr const char *color_codes[]{
+    struct term_t term;
+    bool initialized{};
+    static constexpr const char *color_codes[] = {
         "\033[31m", // Red
         "\033[32m", // Green
         "\033[33m", // Yellow
