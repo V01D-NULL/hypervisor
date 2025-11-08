@@ -38,7 +38,7 @@ void Console::init()
     struct style_t style = {
         DEFAULT_ANSI_COLOURS,        // Default terminal palette
         DEFAULT_ANSI_BRIGHT_COLOURS, // Default terminal bright palette
-        0xA0000000,                  // Background colour
+        0x50000000,                  // Background colour
         0xFFFFFF,                    // Foreground colour
         0,                           // Terminal margin
         0                            // Terminal margin gradient

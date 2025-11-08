@@ -7,7 +7,10 @@
 #include "page.hpp"
 #include "trace.hpp"
 #include "utility.hpp"
+#include "vector.hpp"
+#include "x86-64/apic.hpp"
 #include "x86-64/gdt.hpp"
+#include "x86-64/hpet.hpp"
 #include "x86-64/idt.hpp"
 #include "x86-64/paging.hpp"
 #include "x86-64/pic.hpp"
@@ -17,11 +20,18 @@ USED struct limine_memmap_request memmap {
     .id = LIMINE_MEMMAP_REQUEST, .revision = 0, .response = nullptr
 };
 
+void timer_interrupt(Idt::IntFrame *frame)
+{
+    trace(TRACE_INTERRUPT, "Timer interrupt received", frame->rip);
+    apic.eoi();
+}
+
 extern "C" void _start(void)
 {
     pic.remap();
     gdt.init();
     idt.init();
+    idt.init_handlers();
 
     buddy.init(memmap.response);
     pagelist.init(memmap.response);
@@ -30,15 +40,15 @@ extern "C" void _start(void)
 
     paging.init();
     acpi.init();
+    hpet.init();
+    apic.init();
+    apic.timer_calibrate();
+    apic.timer_init(32, ApicTimerMode::PERIODIC, ApicTimerDivide::BY_16, 20);
 
-    struct Madt {
-        Sdt sdt;
-        uint32_t lapic_addr;
-        uint32_t lapic_flags;
-    } PACKED;
+    idt.set_handler(32, timer_interrupt);
 
-    auto madt = acpi.find_table<Madt *>("APIC");
-    trace(TRACE_CPU, "%#lx %#lx %s", madt->lapic_addr, madt->lapic_flags, madt->sdt.signature);
+    trace(TRACE_CPU, "Enabling interrupts...");
+    enable_interrupts();
 
     halt();
     UNREACHABLE;

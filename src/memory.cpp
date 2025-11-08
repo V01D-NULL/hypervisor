@@ -1,8 +1,18 @@
 #include "memory.hpp"
+#include <limine.h>
 
 // Create buddy singleton
 #include "buddy.hpp"
 CREATE_SINGLETON(BuddyManager, buddy);
+
+USED struct limine_hhdm_request hhdm_request {
+    .id = LIMINE_HHDM_REQUEST, .revision = 0, .response = nullptr
+};
+
+uint64_t get_hhdm_offset()
+{
+    return hhdm_request.response->offset;
+}
 
 void *memset(void *dest, int val, size_t len)
 {

@@ -1,11 +1,16 @@
 #pragma once
 
 #include "compiler.hpp"
+#include "trace.hpp"
+#include "vector.hpp"
 #include <stdint.h>
 
 class Idt
 {
   public:
+    struct IntFrame;
+    using Handler = void (*)(IntFrame *);
+
     struct IdtDescriptor {
         uint16_t offset0;
         uint16_t selector;
@@ -42,6 +47,27 @@ class Idt
     } PACKED;
 
     NOINLINE void init() asm("setup_idt");
+
+    void init_handlers()
+    {
+        interrupt_routine_handlers.resize(255, &default_handler);
+    }
+
+    void set_handler(int vector, Handler handler)
+    {
+        interrupt_routine_handlers.at(vector) = handler;
+    }
+
+    Handler get_handler(int vector) const
+    {
+        return interrupt_routine_handlers.at(vector);
+    }
+
+  private:
+    static void default_handler(Idt::IntFrame *frame);
+
+  private:
+    Vector<Handler, 255> interrupt_routine_handlers;
 };
 
 EXPOSE_SINGLETON(Idt, idt);

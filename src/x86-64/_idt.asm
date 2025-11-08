@@ -35,6 +35,7 @@ interrupt_stub:
     pop r8
     pop rsi
     pop rdi
+    pop rbp
     pop rdx
     pop rcx
     pop rbx
